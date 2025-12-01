@@ -12,7 +12,6 @@ import AppKit
 #elseif os(iOS) || os(tvOS)
 import UIKit
 #endif
-
 // MARK: - 扩展 Int 与 JXAuthCode 的比较
 public func ==(lhs: Int?, rhs: JXAuthCode) -> Bool {
     guard let lhs = lhs else { return false }

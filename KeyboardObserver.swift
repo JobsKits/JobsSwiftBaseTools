@@ -13,9 +13,7 @@ import NSObject_Rx
 
 final class KeyboardObserver {
     static let shared = KeyboardObserver()
-
     private var onChange: ((CGFloat, Bool) -> Void)?
-
     private init() {
         NotificationCenter.default.addObserver(
             self,

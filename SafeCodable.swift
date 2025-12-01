@@ -4,9 +4,7 @@
 //
 
 import Foundation
-
 // ================================== SafeDefault：类型级默认值 ==================================
-
 public protocol SafeDefault {
     static var defaultValue: Self { get }
 }
@@ -18,11 +16,9 @@ extension Float: SafeDefault { public static var defaultValue: Float { 0 } }
 extension Bool: SafeDefault { public static var defaultValue: Bool { false } }
 extension Decimal: SafeDefault { public static var defaultValue: Decimal { 0 } }
 extension Date: SafeDefault { public static var defaultValue: Date { .distantPast } }
-// about:blank 稳定可解析的占位 URL
+/// about:blank 稳定可解析的占位 URL
 extension URL: SafeDefault { public static var defaultValue: URL { URL(string: "about:blank")! } }
-
 // ================================== 事件上报中心 ==================================
-
 public enum SafeCodableEvent {
     /// 发生了宽松转换
     case coerced(from: String, to: String, codingPath: [String], rawSample: String?)
@@ -40,13 +36,10 @@ public final class SafeCodableReportCenter {
     public static var shared: SafeCodableReporting?
     private init() {}
 }
-
 // ================================== 配置（全局 + 轻覆写） ==================================
-
 public struct SafeCodableConfig {
     // 字符串处理
     public var trimStrings: Bool = true
-
     // 类型间宽松转换
     public var allowStringToNumber: Bool = true
     public var allowStringToBool: Bool = true
@@ -54,7 +47,6 @@ public struct SafeCodableConfig {
     public var allowNumberToBool: Bool = true
     public var allowBoolToNumber: Bool = true
     public var allowBoolToString: Bool = true
-
     // Date 解析
     public var allowISO8601Date: Bool = true
     public var allowCustomDateFormats: Bool = true
@@ -62,30 +54,23 @@ public struct SafeCodableConfig {
     public var allowUnixTimestampSeconds: Bool = true
     public var allowUnixTimestampMilliseconds: Bool = true
     public var allowStringifiedTimestamp: Bool = true
-
     // URL 解析
     public var allowURLFromString: Bool = true
     /// 空字符串当作“无值”（非 Optional 时会落默认值）
     public var treatEmptyStringAsNilForURL: Bool = true
-
     // 布尔字面量
     public var boolTrueLiterals: Set<String>  = ["true", "yes", "y", "on", "1"]
     public var boolFalseLiterals: Set<String> = ["false", "no", "n", "off", "0"]
-
     // 上报
     public var reporter: SafeCodableReporting? {
         get { SafeCodableReportCenter.shared }
         set { SafeCodableReportCenter.shared = newValue }
     }
-
     public init() {}
-
     /// 全局共享配置（解码时读取）
     public static var shared = SafeCodableConfig()
 }
-
 // ================================== 工具：编码路径 & 报告 ==================================
-
 @inline(__always)
 private func codingPathStrings(_ decoder: Decoder) -> [String] {
     decoder.codingPath.map { $0.stringValue }
@@ -95,7 +80,6 @@ private func codingPathStrings(_ decoder: Decoder) -> [String] {
 private func report(_ event: SafeCodableEvent) {
     SafeCodableReportCenter.shared?.report(event)
 }
-
 // 小工具：共享 ISO8601 格式器（减少分配）
 private enum _DateParsers {
     static let iso8601: ISO8601DateFormatter = {
@@ -104,9 +88,7 @@ private enum _DateParsers {
         return f
     }()
 }
-
 // ================================== SafeCodable：非 Optional 包装器 ==================================
-
 @propertyWrapper
 public struct SafeCodable<T: Codable & SafeDefault>: Codable {
     public var wrappedValue: T
@@ -158,15 +140,11 @@ public struct SafeCodable<T: Codable & SafeDefault>: Codable {
         try c.encode(wrappedValue)
     }
 }
-
 // ================================== SafeCodableOptional：Optional 版本 ==================================
-
 @propertyWrapper
 public struct SafeCodableOptional<T: Codable & SafeDefault>: Codable {
     public var wrappedValue: T?
-
     private let localTreatEmptyStringAsNilForURL: Bool?
-
     public init(wrappedValue: T? = nil,
                 treatEmptyStringAsNilForURL: Bool? = nil) {
         self.wrappedValue = wrappedValue
@@ -211,9 +189,7 @@ public struct SafeCodableOptional<T: Codable & SafeDefault>: Codable {
         }
     }
 }
-
 // ================================== 核心：宽松转换实现 ==================================
-
 private func coerce<T: Codable>(
     _ type: T.Type,
     from container: SingleValueDecodingContainer,
@@ -221,7 +197,6 @@ private func coerce<T: Codable>(
     codingPath: [String],
     treatEmptyURLNil: Bool
 ) -> T? where T: SafeDefault {
-
     // —— 优先尝试字符串 ——
     if var s = try? container.decode(String.self) {
         if cfg.trimStrings {
@@ -231,7 +206,6 @@ private func coerce<T: Codable>(
             return v
         }
     }
-
     // —— 再尝试数值/布尔 ——
     if let i = try? container.decode(Int.self),
        let v: T = fromInt(i, cfg: cfg, codingPath: codingPath) { return v }
@@ -241,7 +215,6 @@ private func coerce<T: Codable>(
 
     if let b = try? container.decode(Bool.self),
        let v: T = fromBool(b, cfg: cfg, codingPath: codingPath) { return v }
-
     return nil
 }
 
@@ -251,36 +224,30 @@ private func fromString<T: SafeDefault & Codable>(
     codingPath: [String],
     treatEmptyURLNil: Bool
 ) -> T? {
-
     switch T.self {
     case is String.Type:
         report(.coerced(from: "String", to: "\(T.self)", codingPath: codingPath, rawSample: s))
         return (s as! T)
-
     case is Int.Type where cfg.allowStringToNumber:
         if let v = Int(s) {
             report(.coerced(from: "String", to: "Int", codingPath: codingPath, rawSample: s))
             return (v as! T)
         }
-
     case is Double.Type where cfg.allowStringToNumber:
         if let v = Double(s) {
             report(.coerced(from: "String", to: "Double", codingPath: codingPath, rawSample: s))
             return (v as! T)
         }
-
     case is Float.Type where cfg.allowStringToNumber:
         if let v = Float(s) {
             report(.coerced(from: "String", to: "Float", codingPath: codingPath, rawSample: s))
             return (v as! T)
         }
-
     case is Decimal.Type where cfg.allowStringToNumber:
         if let v = Decimal(string: s) {
             report(.coerced(from: "String", to: "Decimal", codingPath: codingPath, rawSample: s))
             return (v as! T)
         }
-
     case is Bool.Type where cfg.allowStringToBool:
         let lowered = s.lowercased()
         if cfg.boolTrueLiterals.contains(lowered) {
@@ -300,7 +267,6 @@ private func fromString<T: SafeDefault & Codable>(
             report(.coerced(from: "String(number)", to: "Bool(\(d != 0))", codingPath: codingPath, rawSample: s))
             return ((d != 0) as! T)
         }
-
     case is Date.Type:
         // 1) ISO8601
         if cfg.allowISO8601Date {
@@ -322,7 +288,6 @@ private func fromString<T: SafeDefault & Codable>(
         if cfg.allowStringifiedTimestamp, let ts = Double(s) {
             if let v: T = fromDouble(ts, cfg: cfg, codingPath: codingPath) { return v }
         }
-
     case is URL.Type where cfg.allowURLFromString:
         if s.isEmpty, treatEmptyURLNil {
             // Optional 包装器会保留为 nil；非 Optional 由上层落默认值
@@ -332,11 +297,9 @@ private func fromString<T: SafeDefault & Codable>(
             report(.coerced(from: "String", to: "URL", codingPath: codingPath, rawSample: s))
             return (url as! T)
         }
-
     default:
         break
-    }
-    return nil
+    };return nil
 }
 
 private func fromInt<T: SafeDefault & Codable>(
@@ -367,8 +330,7 @@ private func fromInt<T: SafeDefault & Codable>(
         }
     default:
         break
-    }
-    return nil
+    };return nil
 }
 
 private func fromDouble<T: SafeDefault & Codable>(
@@ -405,8 +367,7 @@ private func fromDouble<T: SafeDefault & Codable>(
         }
     default:
         break
-    }
-    return nil
+    };return nil
 }
 
 private func fromBool<T: SafeDefault & Codable>(
@@ -430,8 +391,7 @@ private func fromBool<T: SafeDefault & Codable>(
         return (b as! T)
     default:
         break
-    }
-    return nil
+    };return nil
 }
 
 /**

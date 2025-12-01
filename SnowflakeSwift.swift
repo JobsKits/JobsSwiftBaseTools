@@ -9,7 +9,6 @@
 import Foundation
 
 public typealias SnowflakeID = UInt64
-
 //The data structure: symbol(1)-time(41)-IDC(5)machine(5)-seq(12)
 private struct SnowflakeConfig {
     //占位
@@ -64,7 +63,6 @@ public extension SnowflakeSwift {
             //时钟回拨，交给业务处理
             return nil
         }
-        
         //组装ID
         let timeParameter = UInt64(lastGeneralMillisecond - publishMillisecond)
         let timeOffset = UInt64(SnowflakeConfig.IDCBits + SnowflakeConfig.machineBits + SnowflakeConfig.sequenceBits)

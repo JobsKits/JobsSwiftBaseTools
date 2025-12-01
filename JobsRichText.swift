@@ -124,13 +124,13 @@ public struct JobsRichText {
 
         return ms
     }
-    // 等价工具：中划线
+    /// 等价工具：中划线
     public static func strike(_ s: String) -> NSAttributedString {
         NSMutableAttributedString(string: s, attributes: [
             .strikethroughStyle: NSUnderlineStyle.single.rawValue
         ])
     }
-    // 等价工具：下划线
+    /// 等价工具：下划线
     public static func underline(_ s: String) -> NSAttributedString {
         NSMutableAttributedString(string: s, attributes: [
             .underlineStyle: NSUnderlineStyle.single.rawValue

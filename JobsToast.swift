@@ -7,7 +7,6 @@
 
 import UIKit
 import SnapKit
-
 // ================================== Toast ==================================
 @MainActor
 public final class JobsToast: UIView {

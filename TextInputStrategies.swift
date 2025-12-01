@@ -10,29 +10,21 @@ import Foundation
 public enum TextFormatStrategy {
     /// 直接原样（可与其他策略组合使用时置于最后）
     case identity
-
     /// 去除所有空格
     case trimSpaces
-
     /// 全部小写 / 大写
     case lowercased
     case uppercased
-
     /// 仅保留数字
     case digitsOnly
-
     /// 保留数字与小数点，限制小数位数（如 .decimal(2)）
     case decimal(Int)
-
     /// 中国手机号：去非数字，最多 11 位，按 3-4-4 自动分组显示（内部存原始 digits）
     case phoneCNGrouped
-
     /// 银行卡分组（4-4-4-...）
     case bankCardGrouped
-
     /// 自定义：把 (String) -> String 直接包装成策略
     case custom((_ s: String) -> String)
-
     // 组合：按顺序依次应用
     public static func chain(_ strategies: [TextFormatStrategy]) -> (String) -> String {
         return { input in
@@ -134,15 +126,13 @@ public enum TextValidateStrategy {
             if let dot = s.firstIndex(of: ".") {
                 let scale = s.distance(from: dot, to: s.endIndex) - 1
                 return scale >= 0 && scale <= maxScale
-            }
-            return true
+            };return true
         case .regex(let re):
             let range = NSRange(location: 0, length: (s as NSString).length)
             return re.firstMatch(in: s, options: [], range: range) != nil
         }
     }
 }
-
 /// 预置工厂：一站式拿格式化 + 校验闭包
 public struct TextInputStrategyFactory {
     public struct PhoneCN {
