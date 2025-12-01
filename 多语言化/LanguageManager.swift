@@ -33,8 +33,7 @@ public final class LanguageManager {
             let b = Bundle(path: path)
         else {
             return .main
-        }
-        return b
+        };return b
     }
     /// 切换语言：更新 code → 持久化 → 发通知
     public func switchTo(_ code: String) {
