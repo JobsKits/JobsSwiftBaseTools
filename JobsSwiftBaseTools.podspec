@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'JobsSwiftBaseTools'          # Pod 名
-  s.version      = '0.1.7'
+  s.version      = '0.1.8'
   s.summary      = 'Swift@基础工具集'
   s.description  = <<-DESC
                       关于Swift语言下的基础工具集
@@ -19,11 +19,10 @@ Pod::Spec.new do |s|
   }
 
   # 全局排除脚本
-  s.exclude_files = 'MacOS/🫘JobsPublishPods.command'
+  s.exclude_files = ['MacOS/🫘JobsPublishPods.command','icon.png',]
 
   # ====== 源码：主 Pod 直接包含所有 Swift（根目录 + 多语言 + 网络监控）======
   s.source_files = [
-    'icon.png',
     '*.swift',
     '多语言化/**/*.swift',
     '🛜网络流量监控/**/*.swift'
