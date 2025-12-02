@@ -4,7 +4,9 @@
 //
 //  Created by Jobs on 12/1/25.
 //
+#if canImport(JobsSwiftBaseDefines)
 import JobsSwiftBaseDefines
+#endif
 /// 一些用结构体定义的小工具
 public struct JobsValidators {
     // MARK: - 非空验证
