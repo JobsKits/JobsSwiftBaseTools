@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'JobsSwiftBaseTools'          # Pod 名
-  s.version      = '0.1.10'
+  s.version      = '0.1.11'
   s.summary      = 'Swift@基础工具集'
   s.description  = <<-DESC
                       关于Swift语言下的基础工具集
@@ -18,20 +18,28 @@ Pod::Spec.new do |s|
     :tag => s.version.to_s
   }
 
-  # 全局排除脚本
+  # 全局排除脚本 / 图标
   s.exclude_files = [
     'MacOS/🫘JobsPublishPods.command',
-    'icon.png'
+    'icon.png',
   ]
 
-  # ====== 源码：主 Pod 直接包含所有 Swift（根目录 + 多语言 + 网络监控）======
+  # ====================== 根层基础工具（根目录 Swift） ======================
   s.source_files = [
-    '*.swift',
-    '多语言化/*',
-    '🛜网络流量监控/*'
+    'Inlines.swift',
+    'JobsRichText.swift',
+    'JobsSafeTransitions.swift',
+    'JobsText.swift',
+    'JobsStructTools.swift',
+    'JobsTimer.swift',
+    'KeyboardObserver.swift',
+    'SafeCodable.swift',
+    'SnowflakeSwift.swift',
+    'TextInputStrategies.swift',
+    'weak.swift'
   ]
 
-  # ====== 系统库依赖：所有代码共享 ======
+  # ====================== 系统库依赖：所有代码共享 ======================
   s.ios.frameworks = 'UIKit',
                      'QuartzCore',
                      'Network',
@@ -43,7 +51,7 @@ Pod::Spec.new do |s|
                      'CoreBluetooth',
                      'UniformTypeIdentifiers'
 
-  # ====== 第三方依赖：所有代码共享 ======
+  # ====================== 第三方依赖：所有代码共享 ======================
   s.dependency 'RxSwift'
   s.dependency 'RxCocoa'
   s.dependency 'NSObject+Rx'
@@ -51,13 +59,21 @@ Pod::Spec.new do |s|
   s.dependency 'Alamofire'
   s.dependency 'JobsSwiftBaseDefines'
 
-  # ====================== 多语言化（多语言化分组） ======================
+  # ====================== 多语言化（中文目录 + Localizable.strings） ======================
   s.subspec '多语言化' do |ss|
-    ss.source_files = '多语言化/*'
+    # 多语言化文件夹下的 Swift：LanguageManager / TRAutoRefresh / TRLang 等
+    ss.source_files = '多语言化/**/*.swift'
+
+    # 多语言化下的所有 Localizable.strings
+    # 例如：
+    #   多语言化/en.lproj/Localizable.strings
+    #   多语言化/zh-Hans.lproj/Localizable.strings
+    ss.resources = '多语言化/**/*.strings'
   end
 
-  # ====================== 🛜网络流量监控（网络流量监控分组） ======================
+  # ====================== 🛜网络流量监控（中文目录） ======================
   s.subspec '🛜网络流量监控' do |ss|
-    ss.source_files = '🛜网络流量监控/*'
+    # 目录：🛜网络流量监控/JobsNetWorkTools.swift
+    ss.source_files = '🛜网络流量监控/**/*.swift'
   end
 end

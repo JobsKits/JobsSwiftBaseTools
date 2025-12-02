@@ -38,7 +38,7 @@ show_intro_and_wait() {
   note_echo "3) 在脚本当前目录查找 *.podspec，多文件时用 fzf 选择；没有就循环让你输入路径。"
   note_echo "4) 如果检测到 Git 仓库且当前 HEAD 有 tag，则把该 tag 写入 podspec 的 version 字段。"
   note_echo "5) 解析选中的 podspec，读取 name 和 version，仅作为信息展示。"
-  note_echo "6) 执行 pod lib lint --allow-warnings，仅 lint 通过才继续。"
+  note_echo "6) 执行 pod lib lint --allow-warnings，仅 lint 通过才继续（可选）。"
   note_echo "7) 检测是否已经登录 CocoaPods trunk："
   note_echo "   - 已登录：跳过 pod trunk register，不再询问。"
   note_echo "   - 未登录：只在首次时询问是否执行 pod trunk register。"
@@ -417,6 +417,23 @@ run_pod_lib_lint() {
   fi
 }
 
+maybe_run_pod_lib_lint() {
+  warm_echo "是否先执行 pod lib lint --allow-warnings？"
+  echo "👉 直接按 [Enter]：先执行 pod lib lint（推荐，确保本地能通过）"
+  echo "👉 输入任意内容后回车：跳过 lint，直接进行 trunk 发布流程（风险自负）"
+  printf "> "
+  local ans
+  IFS= read -r ans
+  echo
+
+  if [[ -z "$ans" ]]; then
+    note_echo "将先执行 pod lib lint ..."
+    run_pod_lib_lint
+  else
+    warn_echo "已选择跳过 pod lib lint，脚本将直接进入 trunk 发布流程。"
+  fi
+}
+
 push_to_trunk() {
   info_echo "准备执行 pod trunk push $PODSPEC_BASENAME --allow-warnings"
   warm_echo "确保该 Pod 已完成 trunk 邮箱验证，并且本地 'pod trunk me' 状态正常。"
@@ -459,7 +476,6 @@ push_to_trunk() {
   exit 1
 }
 
-
 show_trunk_info() {
   info_echo "查询 trunk 上的 Pod 信息: $POD_NAME"
   if pod trunk info "$POD_NAME"; then
@@ -488,8 +504,8 @@ main() {
   # 4. 解析 name / version
   read_podspec_metadata
 
-  # 5. lint 通过再继续
-  run_pod_lib_lint
+  # 5. 是否执行 lint（回车执行，否则直接跳过）
+  maybe_run_pod_lib_lint
 
   # 6. trunk register（仅在当前环境未登录 trunk 时，才问一次）
   maybe_trunk_register
