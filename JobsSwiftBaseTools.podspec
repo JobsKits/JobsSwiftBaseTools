@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'JobsSwiftBaseTools'          # Pod 名
-  s.version      = '0.1.4'
+  s.version      = '0.1.5'
   s.summary      = 'Swift@基础工具集'
   s.description  = <<-DESC
                       关于Swift语言下的基础工具集
@@ -18,25 +18,10 @@ Pod::Spec.new do |s|
     :tag => s.version.to_s
   }
 
-  # ====== 源码文件（包含根目录 + “多语言化” + “网络流量监控”） ======
-  # 这些路径都是“相对于 podspec 所在目录”
-  s.exclude_files = 'MacOS/🫘JobsPublishPods.command'  # 路径按你仓库真实结构写
-  s.source_files = [
-    '*.swift',                 # 根目录下所有 .swift
-    '多语言化/**/*.swift',      # 多语言化 文件夹里的 .swift
-    '网络流量监控/**/*.swift'   # 网络流量监控 文件夹里的 .swift
-  ]
+  # 全局排除脚本
+  s.exclude_files = 'MacOS/🫘JobsPublishPods.command'
 
-  # ====== 资源（icon + 本地化 .lproj）======
-  # 如果你希望 zh-Hans.lproj 里的 Localizable.strings 也打进 Pod：
-  s.resource_bundles = {
-    'JobsSwiftBaseTools' => [
-      'icon.png',                         # 根目录 icon
-      '多语言化/zh-Hans.lproj/**/*'       # 多语言化/zh-Hans.lproj 里的所有资源
-    ]
-  }
-
-  # ====== 系统库依赖 ======
+  # Pod 级别依赖：所有 subspec 共用
   s.ios.frameworks = 'UIKit',
                      'QuartzCore',
                      'Network',
@@ -48,11 +33,51 @@ Pod::Spec.new do |s|
                      'CoreBluetooth',
                      'UniformTypeIdentifiers'
 
-  # ====== 第三方依赖 ======
   s.dependency 'RxSwift'
   s.dependency 'RxCocoa'
   s.dependency 'NSObject+Rx'
   s.dependency 'SnapKit'
   s.dependency 'Alamofire'
   s.dependency 'JobsSwiftBaseDefines'
+
+  # 默认安装哪些 subspec（pod 'JobsSwiftBaseTools' 时）
+  s.default_subspecs = ['Core', 'Localization', 'NetworkMonitor']
+
+  # ====================== Core（根目录工具） ======================
+  s.subspec 'Core' do |ss|
+    # 根目录所有 Swift（不会包含子目录）
+    ss.source_files = [
+      '*.swift'
+    ]
+
+    # icon 也一起打进来（如果你想）
+    ss.resource_bundles = {
+      'JobsSwiftBaseTools' => [
+        'icon.png'
+      ]
+    }
+  end
+
+  # ====================== Localization（多语言化） ======================
+  s.subspec 'Localization' do |ss|
+    # 一般会依赖 Core 提供的一些工具类型
+    ss.dependency 'JobsSwiftBaseTools/Core'
+
+    ss.source_files = '多语言化/**/*.swift'
+
+    # 多语言资源：zh-Hans.lproj + 其他你后面加的 lproj 都可以一起放
+    ss.resource_bundles = {
+      # 注意：bundle 名不能和别的地方重复
+      'JobsSwiftBaseTools.Localization' => [
+        '多语言化/zh-Hans.lproj/**/*'
+      ]
+    }
+  end
+
+  # ====================== NetworkMonitor（网络流量监控） ======================
+  s.subspec 'NetworkMonitor' do |ss|
+    ss.dependency 'JobsSwiftBaseTools/Core'
+
+    ss.source_files = '网络流量监控/**/*.swift'
+  end
 end
