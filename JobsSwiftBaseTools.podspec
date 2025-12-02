@@ -47,10 +47,8 @@ Pod::Spec.new do |s|
   # ====================== Localization（多语言化） ======================
   s.subspec 'Localization' do |ss|
     # 一般会依赖 Core 提供的一些工具类型
-    ss.dependency 'JobsSwiftBaseTools/Core'
-
+    ss.dependency 'JobsSwiftBaseTools'
     ss.source_files = '多语言化/**/*.swift'
-
     # 多语言资源：zh-Hans.lproj + 其他你后面加的 lproj 都可以一起放
     ss.resource_bundles = {
       # 注意：bundle 名不能和别的地方重复
@@ -62,7 +60,7 @@ Pod::Spec.new do |s|
 
   # ====================== NetworkMonitor（网络流量监控） ======================
   s.subspec 'NetworkMonitor' do |ss|
-    ss.dependency 'JobsSwiftBaseTools/Core'
+    ss.dependency 'JobsSwiftBaseTools'
     ss.source_files = '🛜网络流量监控/**/*.swift'
   end
 end
