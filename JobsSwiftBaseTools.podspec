@@ -77,7 +77,6 @@ Pod::Spec.new do |s|
   # ====================== NetworkMonitor（网络流量监控） ======================
   s.subspec 'NetworkMonitor' do |ss|
     ss.dependency 'JobsSwiftBaseTools/Core'
-
-    ss.source_files = '网络流量监控/**/*.swift'
+    ss.source_files = '🛜网络流量监控/**/*.swift'
   end
 end

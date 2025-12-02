@@ -423,13 +423,42 @@ push_to_trunk() {
   echo "按 [Enter] 继续推送，或 Ctrl+C 取消。"
   IFS= read -r _
 
-  if pod trunk push "$PODSPEC_PATH" --allow-warnings; then
+  local tmp_log="/tmp/pod_trunk_push_${SCRIPT_BASENAME}.log"
+  info_echo "pod trunk push 输出已同步记录到: $tmp_log"
+
+  # 执行 push，并通过 tee 显示 + 记录日志
+  pod trunk push "$PODSPEC_PATH" --allow-warnings 2>&1 | tee "$tmp_log"
+  local exit_code=${PIPESTATUS[0]}   # 取 pipeline 中第一个命令（pod）的退出码
+
+  if [[ $exit_code -eq 0 ]]; then
     success_echo "✅ pod trunk push 成功 ($POD_NAME $POD_VERSION)"
-  else
-    error_echo "❌ pod trunk push 失败，请检查错误信息。"
-    exit 1
+    return 0
   fi
+
+  # ---- 失败情况：先判断是不是 CocoaPods 的内部错误 ----
+  if grep -q "An internal server error occurred" "$tmp_log"; then
+    warn_echo "⚠ 检测到 CocoaPods Trunk 返回 Internal Server Error（服务器内部错误）。"
+    note_echo "大概率是 CocoaPods 官方服务故障，并不一定是你的 podspec 有问题。"
+    echo
+    warm_echo "按 [Enter] 继续执行后续步骤（本次 push 失败，但脚本不会中断）；"
+    warm_echo "或者输入任意字符后回车：立刻结束脚本。"
+    printf "> "
+    local ans
+    IFS= read -r ans
+    if [[ -z "$ans" ]]; then
+      note_echo "已选择继续：脚本将跳过本次 push 错误，继续执行后续步骤。"
+      return 0
+    else
+      error_echo "已根据你的选择终止脚本。"
+      exit 1
+    fi
+  fi
+
+  # ---- 其它错误：仍然直接终止 ----
+  error_echo "❌ pod trunk push 失败，请检查上面的错误信息（非服务器内部错误）。"
+  exit 1
 }
+
 
 show_trunk_info() {
   info_echo "查询 trunk 上的 Pod 信息: $POD_NAME"
