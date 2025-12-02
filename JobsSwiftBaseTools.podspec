@@ -29,6 +29,7 @@ Pod::Spec.new do |s|
   s.dependency 'NSObject+Rx'
   s.dependency 'SnapKit'
   s.dependency 'Alamofire'
+  s.dependency 'JobsSwiftBaseDefines'
 
 end
 

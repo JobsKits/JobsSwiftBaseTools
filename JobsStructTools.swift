@@ -4,9 +4,7 @@
 //
 //  Created by Jobs on 12/1/25.
 //
-#if canImport(JobsSwiftBaseTools)
-import JobsSwiftBaseTools
-#endif
+import JobsSwiftBaseDefines
 /// 一些用结构体定义的小工具
 public struct JobsValidators {
     // MARK: - 非空验证
@@ -61,8 +59,7 @@ public struct CNID {
             let v18 = try convert15to18(s, centuryHint: centuryHintFor15)
             try validate18(v18)
             return v18
-        }
-        throw CNIDError.format
+        };throw CNIDError.format
     }
     /// 将 15 位转换为 18 位（默认世纪 “19”）
     static func convert15to18(_ id15: String, centuryHint: Int = 19) throws -> String {
@@ -70,7 +67,7 @@ public struct CNID {
         let area = String(id15.prefix(6))
         let yymmdd = String(id15[id15.index(id15.startIndex, offsetBy:6)..<id15.index(id15.startIndex, offsetBy:12)])
         let seq = String(id15.suffix(3))
-        // 15位默认表示 1900-1999 年出生（个别极边缘例外可通过 centuryHint 覆写为 20）
+        /// 15位默认表示 1900-1999 年出生（个别极边缘例外可通过 centuryHint 覆写为 20）
         let yearPrefix = String(centuryHint)
         let yyyyMMdd = yearPrefix + yymmdd
         let body17 = area + yyyyMMdd + seq
