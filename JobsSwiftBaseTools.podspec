@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'JobsSwiftBaseTools'          # Pod 名
-  s.version      = '0.1.3'
+  s.version      = '0.1.4'
   s.summary      = 'Swift@基础工具集'
   s.description  = <<-DESC
                       关于Swift语言下的基础工具集
