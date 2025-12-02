@@ -25,6 +25,36 @@ init_log() {
   : > "$LOG_FILE"  # 清空旧日志
 }
 
+# ================================== 自述 & 确认 ==================================
+show_intro_and_wait() {
+  bold_echo "========== CocoaPods 发布辅助脚本 (${SCRIPT_BASENAME}) =========="
+  gray_echo "脚本路径: $SCRIPT_PATH"
+  gray_echo "日志文件: $LOG_FILE"
+  echo
+
+  note_echo "本脚本将执行以下步骤："
+  note_echo "1) 自检 Homebrew，如无则安装；可选更新。"
+  note_echo "2) 通过 Homebrew 安装/升级 fzf。"
+  note_echo "3) 在脚本当前目录查找 *.podspec，多文件时用 fzf 选择；没有就循环让你输入路径。"
+  note_echo "4) 如果检测到 Git 仓库且当前 HEAD 有 tag，则把该 tag 写入 podspec 的 version 字段。"
+  note_echo "5) 解析选中的 podspec，读取 name 和 version，仅作为信息展示。"
+  note_echo "6) 执行 pod lib lint --allow-warnings，仅 lint 通过才继续。"
+  note_echo "7) 检测是否已经登录 CocoaPods trunk："
+  note_echo "   - 已登录：跳过 pod trunk register，不再询问。"
+  note_echo "   - 未登录：只在首次时询问是否执行 pod trunk register。"
+  note_echo "8) 执行 pod trunk push <podspec> --allow-warnings，把 Pod 推到 trunk。"
+  note_echo "9) 最后执行 pod trunk info <name> 查看远端信息。"
+  echo
+  warm_echo "建议先确认："
+  warm_echo "1) 当前 git 分支正确，代码已提交。"
+  warm_echo "2) 如需用 Git tag 控制版本号，HEAD 已打好 tag。"
+  warm_echo "3) 若之前从未注册过 trunk，本次可能需要进行一次 pod trunk register。"
+  echo
+
+  read -r -p "按 [Enter] 继续执行，或按 Ctrl+C 终止脚本... " _
+  echo
+}
+
 # ================================== 工具函数 ==================================
 get_cpu_arch() {
   uname -m
@@ -108,12 +138,10 @@ install_homebrew() {
     info_echo "🔄 Homebrew 已安装。是否执行更新？"
     echo "👉 按 [Enter] 继续：将依次执行  brew update && brew upgrade && brew cleanup && brew doctor && brew -v"
     echo "👉 输入任意字符后回车：跳过更新"
-    # 仅当“直接回车”时继续；其他输入一律跳过
     local confirm
     IFS= read -r confirm
     if [[ -z "$confirm" ]]; then
       info_echo "⏳ 正在更新 Homebrew..."
-      # 分步执行，任一步失败立即报错退出，方便定位
       brew update       || { error_echo "❌ brew update 失败"; return 1; }
       brew upgrade      || { error_echo "❌ brew upgrade 失败"; return 1; }
       brew cleanup      || { error_echo "❌ brew cleanup 失败"; return 1; }
@@ -149,11 +177,12 @@ install_fzf() {
   fi
 }
 
-# ================================== Podspec 选择 & 解析 ==================================
+# ================================== Podspec 选择 ==================================
 PODSPEC_PATH=""
 PODSPEC_BASENAME=""
 POD_NAME=""
 POD_VERSION=""
+GIT_TAG=""
 
 select_podspec_in_script_dir() {
   local search_dir="$SCRIPT_DIR"
@@ -213,6 +242,72 @@ ask_podspec_from_user() {
   done
 }
 
+# ================================== Git tag → version 同步 ==================================
+find_git_repo_root() {
+  # 从脚本目录往上找 .git
+  local dir="$SCRIPT_DIR"
+  while [[ "$dir" != "/" && ! -d "$dir/.git" ]]; do
+    dir="$(dirname "$dir")"
+  done
+  if [[ -d "$dir/.git" ]]; then
+    echo "$dir"
+    return 0
+  fi
+  return 1
+}
+
+sync_podspec_version_with_git_tag_if_possible() {
+  local repo_root
+  if ! repo_root=$(find_git_repo_root); then
+    debug_echo "未检测到 .git 目录，跳过 Git tag → version 同步。"
+    return
+  fi
+
+  if ! command -v git &>/dev/null; then
+    warn_echo "检测到 .git，但系统未安装 git，无法同步 version。"
+    return
+  fi
+
+  info_echo "检测到 Git 仓库: $repo_root"
+
+  # 只取“当前 HEAD 上的 tag”
+  local tags
+  tags=$(cd "$repo_root" && git tag --points-at HEAD)
+  if [[ -z "$tags" ]]; then
+    warn_echo "当前 HEAD 没有打 tag，保持 podspec 中原有 version，不做自动覆盖。"
+    return
+  fi
+
+  local tag
+  tag=$(printf '%s\n' "$tags" | head -n1)
+  GIT_TAG="$tag"
+  highlight_echo "使用 Git tag 作为版本号: $GIT_TAG"
+  ensure_command ruby "需要 Ruby 来修改 podspec 中 version 字段。"
+
+  local spec_file="$PODSPEC_PATH"
+  local ruby_script
+  ruby_script=$(cat << 'RUBY'
+spec_path = ARGV[0]
+new_version = ARGV[1]
+content = File.read(spec_path)
+pattern = /(\.version\s*=\s*['"])[^'"]+(['"])/
+unless content =~ pattern
+  STDERR.puts "未在 podspec 中找到 version 字段。"
+  exit 1
+end
+content.sub!(pattern) { "#{$1}#{new_version}#{$2}" }
+File.write(spec_path, content)
+RUBY
+  )
+
+  if ruby -e "$ruby_script" "$spec_file" "$GIT_TAG" 2>/tmp/podspec_version_update_error.log; then
+    success_echo "已将 podspec 中的 version 更新为 Git tag: $GIT_TAG"
+  else
+    warn_echo "尝试用 Git tag 更新 version 失败，详情见 /tmp/podspec_version_update_error.log；将使用原始 version。"
+  fi
+}
+
+# ================================== Podspec 解析 ==================================
 read_podspec_metadata() {
   ensure_command ruby "CocoaPods 依赖 Ruby，请先安装 Ruby 环境。"
 
@@ -250,30 +345,44 @@ RUBY
   info_echo "🏷 版本号: $POD_VERSION"
 }
 
-# ================================== CocoaPods 操作 ==================================
+# ================================== CocoaPods trunk 相关 ==================================
 ensure_cocoapods() {
   ensure_command pod "请先安装 CocoaPods，例如: sudo gem install cocoapods"
 }
 
-run_pod_lib_lint() {
-  info_echo "开始执行 pod lib lint --allow-warnings $PODSPEC_BASENAME"
-  # 这里实际用的是你选择的 podspec 路径；通常文件名和 s.name 一致
-  if pod lib lint --allow-warnings "$PODSPEC_PATH"; then
-    success_echo "✅ pod lib lint 校验通过"
-  else
-    error_echo "❌ pod lib lint 校验失败，发布流程终止。"
-    exit 1
+is_trunk_logged_in() {
+  # 使用 pod trunk me 判断是否已经登录；只要成功就认为“注册+登录过”
+  local tmp_log="/tmp/pod_trunk_me_${SCRIPT_BASENAME}.log"
+  if pod trunk me >"$tmp_log" 2>&1; then
+    local name email
+    name=$(grep -E '^\s*Name:'  "$tmp_log" | sed 's/^[[:space:]]*Name:[[:space:]]*//')
+    email=$(grep -E '^\s*Email:' "$tmp_log" | sed 's/^[[:space:]]*Email:[[:space:]]*//')
+    if [[ -n "$name" || -n "$email" ]]; then
+      info_echo "当前已登录 CocoaPods trunk: ${name:-?} <${email:-?}>"
+    else
+      info_echo "当前已登录 CocoaPods trunk。"
+    fi
+    return 0
   fi
+  debug_echo "pod trunk me 失败，推测当前环境尚未登录 trunk。"
+  return 1
 }
 
 maybe_trunk_register() {
-  warm_echo "pod trunk register 一般只在首次使用该邮箱时需要执行。"
+  # 如果已经登录过 trunk，就完全跳过，不再问
+  if is_trunk_logged_in; then
+    note_echo "检测到已登录 CocoaPods trunk，跳过 pod trunk register 步骤。"
+    return
+  fi
+
+  warm_echo "当前环境尚未登录 CocoaPods trunk（pod trunk me 失败）。"
+  warm_echo "通常只在首次使用该邮箱时需要执行 pod trunk register。"
   echo "是否现在执行 pod trunk register? [y/N]"
   printf "> "
   local ans
   IFS= read -r ans
   if [[ ! "$ans" =~ ^[Yy]$ ]]; then
-    note_echo "跳过 pod trunk register。"
+    note_echo "已选择跳过 pod trunk register（若从未注册过，该环境可能无法成功 pod trunk push）。"
     return
   fi
 
@@ -294,6 +403,17 @@ maybe_trunk_register() {
     note_echo "请前往邮箱查收 CocoaPods 发来的确认邮件并完成验证后再继续发布。"
   else
     error_echo "pod trunk register 执行失败，你可以手动检查原因或稍后重试。"
+  fi
+}
+
+# ================================== CocoaPods 发布 ==================================
+run_pod_lib_lint() {
+  info_echo "开始执行 pod lib lint --allow-warnings $PODSPEC_BASENAME"
+  if pod lib lint --allow-warnings "$PODSPEC_PATH"; then
+    success_echo "✅ pod lib lint 校验通过"
+  else
+    error_echo "❌ pod lib lint 校验失败，发布流程终止。"
+    exit 1
   fi
 }
 
@@ -323,25 +443,29 @@ show_trunk_info() {
 # ================================== main ==================================
 main() {
   init_log
-  bold_echo "========== CocoaPods 发布辅助脚本 (${SCRIPT_BASENAME}) =========="
-  gray_echo "脚本路径: $SCRIPT_PATH"
+  show_intro_and_wait
 
   # 1. 自检 / 安装 Homebrew + fzf
   install_homebrew
   install_fzf
   ensure_cocoapods
 
-  # 2. 选择 podspec & 解析 name/version
+  # 2. 选择 podspec
   select_podspec_in_script_dir
+
+  # 3. 如果有 Git 仓库 & HEAD 有 tag，用 tag 覆盖 podspec 的 version
+  sync_podspec_version_with_git_tag_if_possible
+
+  # 4. 解析 name / version
   read_podspec_metadata
 
-  # 3. lint 通过再继续
+  # 5. lint 通过再继续
   run_pod_lib_lint
 
-  # 4. trunk register（可选，通常只需要一次）
+  # 6. trunk register（仅在当前环境未登录 trunk 时，才问一次）
   maybe_trunk_register
 
-  # 5. push & 查看 info
+  # 7. push & 查看 info
   push_to_trunk
   show_trunk_info
 
@@ -349,4 +473,3 @@ main() {
 }
 
 main "$@"
-
