@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'JobsSwiftBaseTools'          # Pod 名
-  s.version      = '0.1.6'
+  s.version      = '0.1.7'
   s.summary      = 'Swift@基础工具集'
   s.description  = <<-DESC
                       关于Swift语言下的基础工具集
@@ -21,7 +21,20 @@ Pod::Spec.new do |s|
   # 全局排除脚本
   s.exclude_files = 'MacOS/🫘JobsPublishPods.command'
 
-  # Pod 级别依赖：所有 subspec 共用
+  # ====== 源码：主 Pod 直接包含所有 Swift（根目录 + 多语言 + 网络监控）======
+  s.source_files = [
+    'icon.png',
+    '*.swift',
+    '多语言化/**/*.swift',
+    '🛜网络流量监控/**/*.swift'
+  ]
+
+  # ====== 资源：icon + 本地化，直接打进目标工程的根 Bundle，不建 .bundle ======
+  s.resources = [
+    '多语言化/zh-Hans.lproj/**/*'
+  ]
+
+  # ====== 系统库依赖：所有代码共享 ======
   s.ios.frameworks = 'UIKit',
                      'QuartzCore',
                      'Network',
@@ -33,6 +46,7 @@ Pod::Spec.new do |s|
                      'CoreBluetooth',
                      'UniformTypeIdentifiers'
 
+  # ====== 第三方依赖：所有代码共享 ======
   s.dependency 'RxSwift'
   s.dependency 'RxCocoa'
   s.dependency 'NSObject+Rx'
@@ -40,27 +54,14 @@ Pod::Spec.new do |s|
   s.dependency 'Alamofire'
   s.dependency 'JobsSwiftBaseDefines'
 
-  # 默认安装哪些 subspec（pod 'JobsSwiftBaseTools' 时）
-  s.default_subspecs = ['Localization', 'NetworkMonitor']
-  s.source_files = ['*.swift', 'icon.png']
-
-  # ====================== Localization（多语言化） ======================
+  # ====================== Localization（多语言化分组） ======================
   s.subspec 'Localization' do |ss|
-    # 一般会依赖 Core 提供的一些工具类型
-    ss.dependency 'JobsSwiftBaseTools'
     ss.source_files = '多语言化/**/*.swift'
-    # 多语言资源：zh-Hans.lproj + 其他你后面加的 lproj 都可以一起放
-    ss.resource_bundles = {
-      # 注意：bundle 名不能和别的地方重复
-      'JobsSwiftBaseTools.Localization' => [
-        '多语言化/zh-Hans.lproj/**/*'
-      ]
-    }
   end
 
-  # ====================== NetworkMonitor（网络流量监控） ======================
+  # ====================== NetworkMonitor（网络流量监控分组） ======================
   s.subspec 'NetworkMonitor' do |ss|
-    ss.dependency 'JobsSwiftBaseTools'
     ss.source_files = '🛜网络流量监控/**/*.swift'
   end
 end
+
