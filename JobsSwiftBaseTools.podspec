@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'JobsSwiftBaseTools'          # Pod 名
-  s.version      = '0.1.5'
+  s.version      = '0.1.6'
   s.summary      = 'Swift@基础工具集'
   s.description  = <<-DESC
                       关于Swift语言下的基础工具集
@@ -41,22 +41,8 @@ Pod::Spec.new do |s|
   s.dependency 'JobsSwiftBaseDefines'
 
   # 默认安装哪些 subspec（pod 'JobsSwiftBaseTools' 时）
-  s.default_subspecs = ['Core', 'Localization', 'NetworkMonitor']
-
-  # ====================== Core（根目录工具） ======================
-  s.subspec 'Core' do |ss|
-    # 根目录所有 Swift（不会包含子目录）
-    ss.source_files = [
-      '*.swift'
-    ]
-
-    # icon 也一起打进来（如果你想）
-    ss.resource_bundles = {
-      'JobsSwiftBaseTools' => [
-        'icon.png'
-      ]
-    }
-  end
+  s.default_subspecs = ['Localization', 'NetworkMonitor']
+  s.source_files = ['*.swift', 'icon.png']
 
   # ====================== Localization（多语言化） ======================
   s.subspec 'Localization' do |ss|
