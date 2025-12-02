@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'JobsSwiftBaseTools'          # Pod 名
-  s.version      = '0.1.8'
+  s.version      = '0.1.9'
   s.summary      = 'Swift@基础工具集'
   s.description  = <<-DESC
                       关于Swift语言下的基础工具集
@@ -53,14 +53,13 @@ Pod::Spec.new do |s|
   s.dependency 'Alamofire'
   s.dependency 'JobsSwiftBaseDefines'
 
-  # ====================== Localization（多语言化分组） ======================
-  s.subspec 'Localization' do |ss|
+  # ====================== 多语言化（多语言化分组） ======================
+  s.subspec '多语言化' do |ss|
     ss.source_files = '多语言化/**/*.swift'
   end
 
-  # ====================== NetworkMonitor（网络流量监控分组） ======================
-  s.subspec 'NetworkMonitor' do |ss|
+  # ====================== 🛜网络流量监控（网络流量监控分组） ======================
+  s.subspec '🛜网络流量监控' do |ss|
     ss.source_files = '🛜网络流量监控/**/*.swift'
   end
 end
-
