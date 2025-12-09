@@ -98,7 +98,7 @@ public extension UIViewController {
     /// 被交换后的实现：动画期闸门 + 同类去重（已展示就是同类则忽略）
     @objc dynamic func jobs_present_swizzled(_ vc: UIViewController,
                                              animated: Bool,
-                                             completion: (() -> Void)? = nil) {
+                                             completion: (jobsByVoidBlock)? = nil) {
         guard _canPresentNow() else { return }
 
         let T = type(of: vc)

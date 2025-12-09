@@ -44,10 +44,10 @@ public protocol JobsTimerProtocol: AnyObject {
     func stop()
     /// 注册回调（每 tick 执行一次）
     @discardableResult
-    func onTick(_ block: @escaping () -> Void) -> Self
+    func onTick(_ block: @escaping jobsByVoidBlock) -> Self
     /// 注册完成回调（用于一次性定时器或倒计时）
     @discardableResult
-    func onFinish(_ block: @escaping () -> Void) -> Self
+    func onFinish(_ block: @escaping jobsByVoidBlock) -> Self
 }
 // MARK: - 定时器内核枚举
 public enum JobsTimerKind: String, CaseIterable {
@@ -71,11 +71,11 @@ public extension JobsTimerKind {
 final class JobsFoundationTimer: JobsTimerProtocol {
     private var timer: Timer?
     private let config: JobsTimerConfig
-    private var tickBlocks: [() -> Void] = []
-    private var finishBlocks: [() -> Void] = []
+    private var tickBlocks: [jobsByVoidBlock] = []
+    private var finishBlocks: [jobsByVoidBlock] = []
     private(set) var isRunning = false
 
-    init(config: JobsTimerConfig, handler: @escaping () -> Void) {
+    init(config: JobsTimerConfig, handler: @escaping jobsByVoidBlock) {
         self.config = config
         self.tickBlocks.append(handler)
     }
@@ -127,12 +127,11 @@ final class JobsFoundationTimer: JobsTimerProtocol {
     }
 
     @discardableResult
-    func onTick(_ block: @escaping () -> Void) -> Self { tickBlocks.append(block); return self }
+    func onTick(_ block: @escaping jobsByVoidBlock) -> Self { tickBlocks.append(block); return self }
 
     @discardableResult
-    func onFinish(_ block: @escaping () -> Void) -> Self { finishBlocks.append(block); return self }
+    func onFinish(_ block: @escaping jobsByVoidBlock) -> Self { finishBlocks.append(block); return self }
 }
-
 // MARK: - GCD 实现
 final class JobsGCDTimer: JobsTimerProtocol {
     private let config: JobsTimerConfig
@@ -140,10 +139,10 @@ final class JobsGCDTimer: JobsTimerProtocol {
     private var suspended = false
     private(set) var isRunning = false
 
-    private var tickBlocks: [() -> Void] = []
-    private var finishBlocks: [() -> Void] = []
+    private var tickBlocks: [jobsByVoidBlock] = []
+    private var finishBlocks: [jobsByVoidBlock] = []
 
-    init(config: JobsTimerConfig, handler: @escaping () -> Void) {
+    init(config: JobsTimerConfig, handler: @escaping jobsByVoidBlock) {
         self.config = config
         self.tickBlocks.append(handler)
     }
@@ -201,10 +200,10 @@ final class JobsGCDTimer: JobsTimerProtocol {
     }
 
     @discardableResult
-    func onTick(_ block: @escaping () -> Void) -> Self { tickBlocks.append(block); return self }
+    func onTick(_ block: @escaping jobsByVoidBlock) -> Self { tickBlocks.append(block); return self }
 
     @discardableResult
-    func onFinish(_ block: @escaping () -> Void) -> Self { finishBlocks.append(block); return self }
+    func onFinish(_ block: @escaping jobsByVoidBlock) -> Self { finishBlocks.append(block); return self }
 }
 
 // MARK: - CADisplayLink 实现
@@ -215,10 +214,10 @@ final class JobsDisplayLinkTimer: JobsTimerProtocol {
     private var acc: CFTimeInterval = 0
     private(set) var isRunning = false
 
-    private var tickBlocks: [() -> Void] = []
-    private var finishBlocks: [() -> Void] = []
+    private var tickBlocks: [jobsByVoidBlock] = []
+    private var finishBlocks: [jobsByVoidBlock] = []
 
-    init(config: JobsTimerConfig, handler: @escaping () -> Void) {
+    init(config: JobsTimerConfig, handler: @escaping jobsByVoidBlock) {
         self.config = config
         self.tickBlocks.append(handler)
     }
@@ -260,10 +259,10 @@ final class JobsDisplayLinkTimer: JobsTimerProtocol {
     }
 
     @discardableResult
-    func onTick(_ block: @escaping () -> Void) -> Self { tickBlocks.append(block); return self }
+    func onTick(_ block: @escaping jobsByVoidBlock) -> Self { tickBlocks.append(block); return self }
 
     @discardableResult
-    func onFinish(_ block: @escaping () -> Void) -> Self { finishBlocks.append(block); return self }
+    func onFinish(_ block: @escaping jobsByVoidBlock) -> Self { finishBlocks.append(block); return self }
 
     @objc private func tick(_ l: CADisplayLink) {
         guard isRunning else { return }
@@ -291,10 +290,10 @@ final class JobsRunLoopTimer: JobsTimerProtocol {
     private var rlTimer: CFRunLoopTimer?
     private(set) var isRunning = false
 
-    private var tickBlocks: [() -> Void] = []
-    private var finishBlocks: [() -> Void] = []
+    private var tickBlocks: [jobsByVoidBlock] = []
+    private var finishBlocks: [jobsByVoidBlock] = []
 
-    init(config: JobsTimerConfig, handler: @escaping () -> Void) {
+    init(config: JobsTimerConfig, handler: @escaping jobsByVoidBlock) {
         self.config = config
         self.tickBlocks.append(handler)
     }
@@ -353,16 +352,16 @@ final class JobsRunLoopTimer: JobsTimerProtocol {
     }
 
     @discardableResult
-    func onTick(_ block: @escaping () -> Void) -> Self { tickBlocks.append(block); return self }
+    func onTick(_ block: @escaping jobsByVoidBlock) -> Self { tickBlocks.append(block); return self }
 
     @discardableResult
-    func onFinish(_ block: @escaping () -> Void) -> Self { finishBlocks.append(block); return self }
+    func onFinish(_ block: @escaping jobsByVoidBlock) -> Self { finishBlocks.append(block); return self }
 }
 // MARK: - 工厂
 public enum JobsTimerFactory {
     public static func make(kind: JobsTimerKind,
                             config: JobsTimerConfig,
-                            handler: @escaping () -> Void) -> JobsTimerProtocol {
+                            handler: @escaping jobsByVoidBlock) -> JobsTimerProtocol {
         switch kind {
         case .foundation:   return JobsFoundationTimer(config: config, handler: handler)
         case .gcd:          return JobsGCDTimer(config: config, handler: handler)

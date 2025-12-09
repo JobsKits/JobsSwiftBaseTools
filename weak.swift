@@ -5,12 +5,13 @@
 //  Created by Mac on 10/30/25.
 //
 
-// MARK: - weak
+import Foundation
+
 @inlinable
 public func jobs_weakify<Owner: AnyObject>(
     _ owner: Owner,
-    _ block: @escaping (Owner) -> Void
-) -> () -> Void {
+    _ block: @escaping jobsByNonNullTypeBlock<Owner>
+) -> jobsByVoidBlock {
     { [weak owner] in
         guard let owner else { return }
         block(owner)
@@ -20,8 +21,8 @@ public func jobs_weakify<Owner: AnyObject>(
 @inlinable
 public func jobs_weakify<Owner: AnyObject, Arg>(
     _ owner: Owner,
-    _ block: @escaping (Owner, Arg) -> Void
-) -> (Arg) -> Void {
+    _ block: @escaping jobsByOwnerArgBlock<Owner, Arg>
+) -> jobsByArgBlock<Arg> {
     { [weak owner] arg in
         guard let owner else { return }
         block(owner, arg)
@@ -31,8 +32,8 @@ public func jobs_weakify<Owner: AnyObject, Arg>(
 @inlinable
 public func jobs_weakify<Owner: AnyObject, R>(
     _ owner: Owner,
-    _ block: @escaping (Owner) -> R
-) -> () -> R? {
+    _ block: @escaping jobsByOwnerRetBlock<Owner, R>
+) -> JobsRetOptionalTByVoidBlock<R> {
     { [weak owner] in
         guard let owner else { return nil }
         return block(owner)
@@ -42,19 +43,19 @@ public func jobs_weakify<Owner: AnyObject, R>(
 @inlinable
 public func jobs_weakify<Owner: AnyObject, Arg, R>(
     _ owner: Owner,
-    _ block: @escaping (Owner, Arg) -> R
-) -> (Arg) -> R? {
+    _ block: @escaping jobsByOwnerArgRetBlock<Owner, Arg, R>
+) -> JobsRetOptionalTByArgBlock<Arg, R> {
     { [weak owner] arg in
         guard let owner else { return nil }
         return block(owner, arg)
     }
 }
-// ---- 可选：平替你原先“柯里化”签名的版本 ----
+// MARK: - weak + 柯里化
 @inlinable
 public func jobs_weakify<Owner: AnyObject, R>(
     _ owner: Owner,
-    _ function: @escaping (Owner) -> () -> R
-) -> () -> R? {
+    _ function: @escaping jobsByCurriedOwnerRetBlock<Owner, R>
+) -> JobsRetOptionalTByVoidBlock<R> {
     { [weak owner] in
         guard let owner else { return nil }
         return function(owner)()
@@ -64,8 +65,8 @@ public func jobs_weakify<Owner: AnyObject, R>(
 @inlinable
 public func jobs_weakify<Owner: AnyObject, Arg, R>(
     _ owner: Owner,
-    _ function: @escaping (Owner) -> (Arg) -> R
-) -> (Arg) -> R? {
+    _ function: @escaping jobsByCurriedOwnerArgRetBlock<Owner, Arg, R>
+) -> JobsRetOptionalTByArgBlock<Arg, R> {
     { [weak owner] arg in
         guard let owner else { return nil }
         return function(owner)(arg)
@@ -75,8 +76,8 @@ public func jobs_weakify<Owner: AnyObject, Arg, R>(
 @inlinable
 public func jobs_unownedify<Owner: AnyObject>(
     _ owner: Owner,
-    _ block: @escaping (Owner) -> Void
-) -> () -> Void {
+    _ block: @escaping jobsByNonNullTypeBlock<Owner>
+) -> jobsByVoidBlock {
     { [unowned owner] in
         block(owner)
     }
@@ -85,8 +86,8 @@ public func jobs_unownedify<Owner: AnyObject>(
 @inlinable
 public func jobs_unownedify<Owner: AnyObject, Arg>(
     _ owner: Owner,
-    _ block: @escaping (Owner, Arg) -> Void
-) -> (Arg) -> Void {
+    _ block: @escaping jobsByOwnerArgBlock<Owner, Arg>
+) -> jobsByArgBlock<Arg> {
     { [unowned owner] arg in
         block(owner, arg)
     }
@@ -95,8 +96,8 @@ public func jobs_unownedify<Owner: AnyObject, Arg>(
 @inlinable
 public func jobs_unownedify<Owner: AnyObject, R>(
     _ owner: Owner,
-    _ block: @escaping (Owner) -> R
-) -> () -> R {
+    _ block: @escaping jobsByOwnerRetBlock<Owner, R>
+) -> JobsRetTByVoidBlock<R> {
     { [unowned owner] in
         block(owner)
     }
@@ -105,18 +106,18 @@ public func jobs_unownedify<Owner: AnyObject, R>(
 @inlinable
 public func jobs_unownedify<Owner: AnyObject, Arg, R>(
     _ owner: Owner,
-    _ block: @escaping (Owner, Arg) -> R
+    _ block: @escaping jobsByOwnerArgRetBlock<Owner, Arg, R>
 ) -> (Arg) -> R {
     { [unowned owner] arg in
         block(owner, arg)
     }
 }
-// ---- 柯里化 unowned 版（与上面 weakifyC 对齐）----
+// MARK: - Unowned + 柯里化
 @inlinable
 public func jobs_unownedify<Owner: AnyObject, R>(
     _ owner: Owner,
-    _ function: @escaping (Owner) -> () -> R
-) -> () -> R {
+    _ function: @escaping jobsByCurriedOwnerRetBlock<Owner, R>
+) -> JobsRetTByVoidBlock<R> {
     { [unowned owner] in
         function(owner)()
     }
@@ -125,7 +126,7 @@ public func jobs_unownedify<Owner: AnyObject, R>(
 @inlinable
 public func jobs_unownedify<Owner: AnyObject, Arg, R>(
     _ owner: Owner,
-    _ function: @escaping (Owner) -> (Arg) -> R
+    _ function: @escaping jobsByCurriedOwnerArgRetBlock<Owner, Arg, R>
 ) -> (Arg) -> R {
     { [unowned owner] arg in
         function(owner)(arg)

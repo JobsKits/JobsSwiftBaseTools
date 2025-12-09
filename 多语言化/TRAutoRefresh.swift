@@ -8,7 +8,11 @@
 //  依赖：Notification.Name.JobsLanguageDidChange、TRLang.bundleProvider()
 //
 
+#if os(OSX)
+import AppKit
+#elseif os(iOS) || os(tvOS)
 import UIKit
+#endif
 
 public enum TRAutoRefresh {
     // MARK: - 线程本地标记（.tr 内部调用）

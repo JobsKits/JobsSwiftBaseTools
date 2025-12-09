@@ -119,9 +119,7 @@ public extension JobsText {
                 var merged = attrs
                 new.forEach { k, v in merged[k] = v } // 以 new 覆盖冲突
                 m.setAttributes(merged, range: range)
-            }
-            // 新实例，保持不可变存储
-            return JobsText(m)
+            };return JobsText(m) // 新实例，保持不可变存储
         }
     }
     /// 自定义映射到底层 NSAttributedString（给你完全控制权）
@@ -169,7 +167,6 @@ public extension JobsText {
                      options: [NSAttributedString.DocumentReadingOptionKey: Any] = [:]) -> JobsText? {
         if let a = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
             return JobsText(a)
-        }
-        return nil
+        };return nil
     }
 }

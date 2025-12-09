@@ -5,7 +5,11 @@
 //  Created by Mac on 9/30/25.
 //
 
+#if os(OSX)
+import AppKit
+#elseif os(iOS) || os(tvOS)
 import UIKit
+#endif
 import ObjectiveC
 import RxSwift
 import RxCocoa

@@ -299,9 +299,9 @@ final class JobsNetworkDataReadyMonitor {
     func waitOnce(
         interval: TimeInterval = 0.5,
         timeout: TimeInterval? = 10,
-        onWiFiReady: (() -> Void)? = nil,
-        onCellularReady: (() -> Void)? = nil,
-        onTimeout: (() -> Void)? = nil
+        onWiFiReady: (jobsByVoidBlock)? = nil,
+        onCellularReady: (jobsByVoidBlock)? = nil,
+        onTimeout: (jobsByVoidBlock)? = nil
     ) {
         queue.async { [weak self] in
             guard let self else { return }
@@ -424,9 +424,9 @@ extension JobsNetworkDataReadyMonitor {
     func byWaitOnce(
         interval: TimeInterval = 0.5,
         timeout: TimeInterval? = 10,
-        onWiFiReady: (() -> Void)? = nil,
-        onCellularReady: (() -> Void)? = nil,
-        onTimeout: (() -> Void)? = nil
+        onWiFiReady: (jobsByVoidBlock)? = nil,
+        onCellularReady: (jobsByVoidBlock)? = nil,
+        onTimeout: (jobsByVoidBlock)? = nil
     ) -> Self {
         waitOnce(
             interval: interval,
@@ -457,9 +457,9 @@ extension JobsNetworkDataReadyMonitor {
 /// )
 /// ```
 func jobsWaitNetworkDataReady(
-    onWiFiReady: (() -> Void)? = nil,
-    onCellularReady: (() -> Void)? = nil,
-    onTimeout: (() -> Void)? = nil
+    onWiFiReady: (jobsByVoidBlock)? = nil,
+    onCellularReady: (jobsByVoidBlock)? = nil,
+    onTimeout: (jobsByVoidBlock)? = nil
 ) {
     JobsNetworkDataReadyMonitor.shared.byWaitOnce(
         interval: 0.5,
