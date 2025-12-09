@@ -9,7 +9,7 @@ import Foundation
 import Darwin
 import Network
 import CoreTelephony
-/// 🛜网络流量监控
+/// 🛜 网络流量监控
 // MARK: - 数据源类型（当前网络来源）
 enum JobsNetworkSource {
     case wifi
@@ -19,10 +19,10 @@ enum JobsNetworkSource {
 
     var displayName: String {
         switch self {
-        case .wifi:     return "Wi-Fi"
-        case .cellular: return "蜂窝"
-        case .other:    return "其他"
-        case .none:     return "无网络"
+        case .wifi:     return "Wi-Fi".tr
+        case .cellular: return "蜂窝".tr
+        case .other:    return "其他".tr
+        case .none:     return "无网络".tr
         }
     }
 }
@@ -31,7 +31,6 @@ enum JobsNetworkSource {
 struct NetworkBytes {
     let download: UInt64   // 下行总字节数
     let upload: UInt64     // 上行总字节数
-
     init(download: UInt64 = 0, upload: UInt64 = 0) {
         self.download = download
         self.upload = upload
@@ -42,7 +41,6 @@ struct NetworkSplitBytes {
     let wifi: NetworkBytes
     let cellular: NetworkBytes
     let other: NetworkBytes
-
     /// 所有来源合计
     var total: NetworkBytes {
         NetworkBytes(
@@ -78,9 +76,7 @@ func currentNetworkBytesSplit() -> NetworkSplitBytes {
             ptr = ifa.ifa_next
             continue
         }
-
         let name = String(cString: ifa.ifa_name)
-
         if let data = ifa.ifa_data?.assumingMemoryBound(to: if_data.self).pointee {
             let inBytes  = UInt64(data.ifi_ibytes)
             let outBytes = UInt64(data.ifi_obytes)
@@ -99,9 +95,7 @@ func currentNetworkBytesSplit() -> NetworkSplitBytes {
         }
 
         ptr = ifa.ifa_next
-    }
-    freeifaddrs(addrs)
-
+    };freeifaddrs(addrs)
     return NetworkSplitBytes(
         wifi: NetworkBytes(download: wifiIn, upload: wifiOut),
         cellular: NetworkBytes(download: cellIn, upload: cellOut),
@@ -238,10 +232,8 @@ func currentCellularCarrierDescription() -> String? {
             }
             if carrier.isoCountryCode != nil {
                 // 可以扩展更多字段
-            }
-            return parts.isEmpty ? nil : parts.joined(separator: "，")
-        }
-        return descs.isEmpty ? nil : descs.joined(separator: " | ")
+            };return parts.isEmpty ? nil : parts.joined(separator: "，")
+        };return descs.isEmpty ? nil : descs.joined(separator: " | ")
     } else {
         guard let carrier = networkInfo.subscriberCellularProvider else { return nil }
         var parts: [String] = []
@@ -250,8 +242,7 @@ func currentCellularCarrierDescription() -> String? {
         }
         if let mcc = carrier.mobileCountryCode, let mnc = carrier.mobileNetworkCode {
             parts.append("MCC/MNC: \(mcc)/\(mnc)")
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: "，")
+        };return parts.isEmpty ? nil : parts.joined(separator: "，")
     }
 }
 // MARK: - 当前网络类型描述（Wi-Fi / 蜂窝 / 其他）
@@ -297,7 +288,6 @@ final class JobsNetworkDataReadyMonitor {
     private var deadline: CFAbsoluteTime?
 
     private init() {}
-
     /// 等到“有数据流动”之后仅回调一次（Wi-Fi / 蜂窝 分别触发）。
     ///
     /// - Parameters:
@@ -338,11 +328,9 @@ final class JobsNetworkDataReadyMonitor {
 
             let t = DispatchSource.makeTimerSource(queue: self.queue)
             t.schedule(deadline: .now() + interval, repeating: interval)
-
             t.setEventHandler { [weak self] in
                 guard let self else { return }
                 guard self.waiting else { return }
-
                 // 使用 NWPathMonitor 的主线路信息做“互斥判断”：
                 // - 如果同时传了 Wi-Fi / 蜂窝两个回调，就只触发当前主线路对应的那个；
                 // - 如果只传了其中一个，则保持原本“只要有对应流量就触发”的行为。
@@ -352,7 +340,6 @@ final class JobsNetworkDataReadyMonitor {
                 let nowSplit = currentNetworkBytesSplit()
                 let nowWiFi = nowSplit.wifi
                 let nowCell = nowSplit.cellular
-
                 // Wi-Fi 首包
                 if !self.wifiDone, let last = self.lastWiFi {
                     let deltaDown = nowWiFi.download &- last.download
@@ -367,7 +354,6 @@ final class JobsNetworkDataReadyMonitor {
                         }
                     }
                 }
-
                 // 蜂窝首包
                 if !self.cellularDone, let last = self.lastCellular {
                     let deltaDown = nowCell.download &- last.download
@@ -385,13 +371,11 @@ final class JobsNetworkDataReadyMonitor {
 
                 self.lastWiFi = nowWiFi
                 self.lastCellular = nowCell
-
                 // 两边都已经触发完了，收工
                 if self.wifiDone && self.cellularDone {
                     self.stopLocked()
                     return
                 }
-
                 // 超时兜底（只在完全没有任何流量时才触发）
                 if let deadline = self.deadline,
                    CFAbsoluteTimeGetCurrent() >= deadline {
@@ -402,7 +386,6 @@ final class JobsNetworkDataReadyMonitor {
                     }
                 }
             }
-
             self.timer = t
             t.resume()
         }
@@ -451,8 +434,7 @@ extension JobsNetworkDataReadyMonitor {
             onWiFiReady: onWiFiReady,
             onCellularReady: onCellularReady,
             onTimeout: onTimeout
-        )
-        return self
+        );return self
     }
 }
 /// 统一入口：等待 Wi-Fi / 蜂窝“真的有流量”
