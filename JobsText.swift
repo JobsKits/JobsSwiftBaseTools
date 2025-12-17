@@ -8,9 +8,7 @@
 import Foundation
 #if os(OSX)
 import AppKit
-#endif
-
-#if os(iOS) || os(tvOS)
+#elseif os(iOS) || os(tvOS)
 import UIKit
 #endif
 /// 统一载体：既可承载纯文本，也可承载富文本（不依赖 UIKit）
