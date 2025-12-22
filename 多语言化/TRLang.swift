@@ -10,7 +10,7 @@ import Foundation
 public enum TRLang {
     // 原来是: public static var bundleProvider: (() -> Bundle)?
     public static var bundleProvider: () -> Bundle = { .main }
-    // 原来是可选；如果你确实需要它，给个安全默认
+    // 原来是可选；如果确实需要它，给个安全默认
     public static var localeCodeProvider: () -> String = { Locale.current.identifier }
     @inline(__always)
     public static func bundle() -> Bundle { bundleProvider() }

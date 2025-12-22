@@ -12,7 +12,7 @@ import AppKit
 import UIKit
 #endif
 /// 统一载体：既可承载纯文本，也可承载富文本（不依赖 UIKit）
-/// Swift 并发里，跨 actor / 跨任务传递的数据，如果是 Sendable，编译器才认为你这么用是安全的。
+/// Swift 并发里，跨 actor / 跨任务传递的数据，如果是 Sendable，编译器才认为这么用是安全的。
 public struct JobsText: Sendable {
     // ⚠️ 注意：NSAttributedString 非 Sendable
     // 这里的 Storage 不再声明 Sendable，而是在下面用 @unchecked Sendable 明确“我保证只读与拷贝”。
@@ -120,7 +120,7 @@ public extension JobsText {
             };return JobsText(m) // 新实例，保持不可变存储
         }
     }
-    /// 自定义映射到底层 NSAttributedString（给你完全控制权）
+    /// 自定义映射到底层 NSAttributedString（给完全控制权）
     func mapAttributed(_ transform: (NSAttributedString) -> NSAttributedString) -> JobsText {
         switch storage {
         case .plain(let s):

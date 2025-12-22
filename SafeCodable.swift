@@ -409,7 +409,7 @@ private func fromBool<T: SafeDefault & Codable>(
 
              SafeCodableReportCenter.shared = ConsoleReporter()
          }
-         // 控制台上报器（也可接入你自己的日志系统）
+         // 控制台上报器（也可接入自己的日志系统）
          final class ConsoleReporter: SafeCodableReporting {
              func report(_ event: SafeCodableEvent) {
                  switch event {
@@ -423,7 +423,7 @@ private func fromBool<T: SafeDefault & Codable>(
              }
          }
      }
-     // 2) 你的模型
+     // 2) 模型
      struct User: Codable {
          @SafeCodable var id: Int
          @SafeCodable var name: String
@@ -433,7 +433,7 @@ private func fromBool<T: SafeDefault & Codable>(
          @SafeCodable var homepage: URL
          @SafeCodableOptional var avatarURL: URL?
      }
-     // 3) 演示解码（放到你需要的地方调用）
+     // 3) 演示解码（放到需要的地方调用）
      func demoDecode() {
          let json = #"""
          {
