@@ -58,6 +58,7 @@ Pod::Spec.new do |s|
   s.dependency 'SnapKit'
   s.dependency 'Alamofire'
   s.dependency 'JobsSwiftBaseDefines'
+  s.dependency 'JobsSwiftBlock', '~> 0.1.0'
 
   # ====================== 多语言化（中文目录 + Localizable.strings） ======================
   s.subspec '多语言化' do |ss|
